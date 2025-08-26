@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Jump: El Maestro de la IA</title>
+    <!-- Tailwind CSS CDN para estilos básicos y responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c; /* Fondo oscuro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            /* overflow: hidden;  Eliminado para permitir scroll en móviles si es necesario */
+        }
+        .game-container {
+            background-color: #2d3748; /* Contenedor del juego */
+            border-radius: 1.5rem; /* Bordes redondeados */
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.5); /* Sombra */
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            max-width: 100vw;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        canvas {
+            background-color: #87ceeb; /* Cielo azul */
+            display: block;
+            border-radius: 0.75rem; /* Bordes redondeados para el canvas */
+            border: 4px solid #4a5568; /* Borde del canvas */
+            touch-action: manipulation; /* Mejora la respuesta táctil */
+            width: 100vw;
+            max-width: 700px;
+            height: auto;
+            aspect-ratio: 7/4;
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 1rem;
+            color: #e2e8f0; /* Texto claro */
+            font-weight: bold;
+            font-size: 1.125rem; /* Tamaño de fuente */
+        }
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+        .control-button {
+            background-color: #4299e1; /* Azul */
+            color: white;
+            padding: 1.2rem 2.2rem;
+            border-radius: 9999px; /* Botones redondos */
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            border: none;
+            outline: none;
+            min-width: 120px;
+            min-height: 60px;
+            touch-action: manipulation;
+        }
+        /* Mejoras para móviles */
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 0.5rem;
+                border-radius: 0.5rem;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            }
+            .game-info {
+                font-size: 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            canvas {
+                width: 98vw;
+                max-width: 100vw;
+                height: auto;
+                border-width: 2px;
+                border-radius: 0.5rem;
+            }
+            .control-buttons {
+                gap: 0.5rem;
+                margin-top: 1rem;
+            }
+            .control-button {
+                font-size: 1.1rem;
+                padding: 0.8rem 1.2rem;
+                min-width: 80px;
+                min-height: 48px;
+            }
+            .modal-content {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                font-size: 1rem;
+            }
+        }
+        .control-button:hover {
+            background-color: #3182ce; /* Azul más oscuro al pasar el ratón */
+            transform: translateY(-2px);
+        }
+        .control-button:active {
+            background-color: #2b6cb0; /* Azul aún más oscuro al hacer clic */
+            transform: translateY(0);
+        }
+
+        /* Modal para preguntas y mensajes */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        .modal-content h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: #63b3ed; /* Azul claro */
+        }
+        .modal-content p {
+            font-size: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .modal-content .options button {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background-color: #4c51bf; /* Morado */
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .modal-content .options button:hover {
+            background-color: #434190; /* Morado más oscuro */
+            transform: translateY(-1px);
+        }
+        .modal-content .options button:active {
+            background-color: #363673;
+            transform: translateY(0);
+        }
+        .modal-content .start-button {
+            background-color: #48bb78; /* Verde */
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 9999px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        .modal-content .start-button:hover {
+            background-color: #38a169; /* Verde más oscuro */
+            transform: translateY(-2px);
+        }
+        .modal-content .start-button:active {
+            background-color: #2f855a;
+            transform: translateY(0);
+        }
+
+        /* Estilos para el jugador y plataformas (dibujados en JS) */
+        /* No se necesitan estilos CSS aquí, ya que se dibujan en el canvas. */
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-info">
+            <span>Nivel: <span id="level-display">1</span></span>
+            <span>Vidas: <span id="lives-display">3</span></span>
+            <span>Puntuación: <span id="score-display">0</span></span>
+        </div>
+    <canvas id="gameCanvas" width="700" height="400" style="max-width:100vw;width:100%;height:auto;aspect-ratio:7/4;"></canvas>
+        <div class="control-buttons">
+            <button id="leftButton" class="control-button">← Izquierda</button>
+            <button id="jumpButton" class="control-button">↑ Saltar</button>
+            <button id="rightButton" class="control-button">Derecha →</button>
+        </div>
+    </div>
+
+    <!-- Modal para preguntas y mensajes -->
+    <div id="gameModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <p id="modalMessage"></p>
+            <div id="questionOptions" class="options" style="display:none;">
+                <!-- Opciones de respuesta se insertarán aquí por JS -->
+            </div>
+            <button id="startButton" class="start-button" style="display:none;">Comenzar Juego</button>
+        </div>
+    </div>
+
+    <script>
+        // Obtener el canvas y su contexto
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Elementos de la UI
+        const levelDisplay = document.getElementById('level-display');
+        const livesDisplay = document.getElementById('lives-display');
+        const scoreDisplay = document.getElementById('score-display');
+
+        // Modal
+        const gameModal = document.getElementById('gameModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalMessage = document.getElementById('modalMessage');
+        const questionOptions = document.getElementById('questionOptions');
+        const startButton = document.getElementById('startButton');
+
+        // Botones de control (para móvil/táctil)
+        const leftButton = document.getElementById('leftButton');
+        const jumpButton = document.getElementById('jumpButton');
+        const rightButton = document.getElementById('rightButton');
+
+        // --- Configuración del Juego ---
+        const GAME_WIDTH = canvas.width;
+        const GAME_HEIGHT = canvas.height;
+        const GRAVITY = 0.2; // Gravedad reducida para una caída más ligera
+        const PLAYER_SPEED = 1; // Velocidad de movimiento del jugador
+        const JUMP_STRENGTH = -7; // Fuerza del salto reducida
+
+        // --- Estado del Juego ---
+        let currentLevel = 1;
+        let lives = 3;
+        let score = 0;
+        let gameActive = false; // Controla si el juego está en curso
+        let player = {}; // Objeto del jugador
+        let platforms = []; // Plataformas del nivel actual
+        let levelObjective = {}; // El objeto que el jugador debe alcanzar
+        let keys = {}; // Estado de las teclas presionadas
+
+        // --- Definición del Jugador ---
+        function createPlayer() {
+            return {
+                x: 50,
+                y: GAME_HEIGHT - 50, // Comienza en una posición inicial segura
+                width: 30,
+                height: 30,
+                dx: 0, // Velocidad en X
+                dy: 0, // Velocidad en Y
+                isJumping: false,
+                isFalling: false,
+                grounded: false // Si está tocando el suelo
+            };
+        }
+
+        // --- Preguntas de IA (Proporcionadas por el usuario) ---
+        const questions = [
+            {
+                level: 1,
+                question: "¿Cuál es la estrategia dual de IA adoptada por la empresa?",
+                options: [
+                    "Usar solo Microsoft Copilot para todas las tareas.",
+                    "Usar solo Google Gemini para tareas avanzadas.",
+                    "Aprovechar las fortalezas de Microsoft Copilot para la productividad diaria y la familia Google Gemini para la innovación y tareas avanzadas.",
+                    "No usar IA en su estrategia."
+                ],
+                correctAnswer: "Aprovechar las fortalezas de Microsoft Copilot para la productividad diaria y la familia Google Gemini para la innovación y tareas avanzadas."
+            },
+            {
+                level: 2,
+                question: "¿Cómo se integra Microsoft Copilot en el entorno de trabajo diario de la empresa?",
+                options: [
+                    "Como una herramienta independiente que requiere software adicional.",
+                    "Está integrado profundamente en el ecosistema de Microsoft 365, incluyendo Word, Excel, PowerPoint, Outlook y Teams.",
+                    "Solo funciona con aplicaciones de Google.",
+                    "Se usa exclusivamente para tareas de codificación."
+                ],
+                correctAnswer: "Está integrado profundamente en el ecosistema de Microsoft 365, incluyendo Word, Excel, PowerPoint, Outlook y Teams."
+            },
+            {
+                level: 3,
+                question: "¿Cuál de los siguientes NO es un beneficio clave de la implementación de Copilot para la empresa?",
+                options: [
+                    "Aumento de productividad.",
+                    "Reducción de tareas repetitivas.",
+                    "Consistencia y calidad.",
+                    "Sustitución completa de empleados por IA."
+                ],
+                correctAnswer: "Sustitución completa de empleados por IA."
+            },
+            {
+                level: 4,
+                question: "¿Cuál es la diferencia principal entre Google Gemini 2.5 Pro y Gemini 2.5 Flash según la presentación?",
+                options: [
+                    "Gemini 2.5 Pro es para la transcripción de audio, y Gemini 2.5 Flash es para el análisis de datos avanzados.",
+                    "Gemini 2.5 Pro es más rápido y económico, mientras que Gemini 2.5 Flash tiene una ventana de contexto de 1 millón de tokens.",
+                    "Gemini 2.5 Pro es para razonamiento profundo y comprensión compleja, mientras que Gemini 2.5 Flash es para agilidad, eficiencia y alta velocidad en grandes volúmenes de tareas.",
+                 ],
+                correctAnswer: "Gemini 2.5 Pro es para razonamiento profundo y comprensión compleja, mientras que Gemini 2.5 Flash es para agilidad, eficiencia y alta velocidad en grandes volúmenes de tareas."
+            },
+            {
+                level: 5,
+                question: "Si estás intentando iniciar sesión en Microsoft Copilot y tu correo electrónico empresarial inicial falla, ¿cuál es una solución de problemas recomendada?",
+                options: [
+                    "Reiniciar la computadora.",
+                    "Usar una cuenta personal en lugar de la empresarial.",
+                    "Intentar agregar \".co\" al final de tu dirección de correo electrónico.",
+                    "Cambiar la contraseña inmediatamente."
+                ],
+                correctAnswer: "Intentar agregar \".co\" al final de tu dirección de correo electrónico."
+            },
+            {
+                level: 6,
+                question: "Si recibes un mensaje de error \"Authorization data is wrong!\" al intentar iniciar sesión en Brújula Dual, ¿cuál es el primer paso recomendado para solucionar el problema?",
+                options: [
+                    "Contactar a soporte técnico.",
+                    "Cambiar la contraseña de la cuenta.",
+                    "Eliminar los datos de navegación del navegador, seleccionando la opción \"Desde siempre\".",
+                    "Reintentar iniciar sesión varias veces con las mismas credenciales."
+                ],
+                correctAnswer: "Eliminar los datos de navegación del navegador, seleccionando la opción \"Desde siempre\"."
+            }
+        ];
+
+        // --- Función para obtener preguntas de IA (Ahora usa las preguntas estáticas) ---
+        function getAIQuestionForLevel(level) {
+            return questions.find(q => q.level === level);
+        }
+
+        // --- Definición de Niveles ---
+        const levelData = {
+            1: { // Nivel 1: Plataforma inicial y algunas elevadas
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 80, height: 20 }, // Plataforma de inicio
+                    { x: 200, y: GAME_HEIGHT - 100, width: 100, height: 20 },
+                    { x: 350, y: GAME_HEIGHT - 150, width: 120, height: 20 },
+                    { x: 500, y: GAME_HEIGHT - 200, width: 150, height: 20 }
+                ],
+                objective: { x: 600, y: GAME_HEIGHT - 260, width: 30, height: 30 } // Chip de IA
+            },
+            2: { // Nivel 1: Más saltos y plataformas más pequeñas
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 80, height: 20 }, // Plataforma de inicio
+                    { x: 180, y: GAME_HEIGHT - 90, width: 70, height: 20 },
+                    { x: 300, y: GAME_HEIGHT - 140, width: 90, height: 20 },
+                    { x: 450, y: GAME_HEIGHT - 190, width: 60, height: 20 },
+                    { x: 580, y: GAME_HEIGHT - 240, width: 80, height: 20 }
+                ],
+                objective: { x: 600, y: GAME_HEIGHT - 270, width: 30, height: 30 }
+            },
+            3: { // Nivel 2: Plataformas escalonadas y huecos
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 70, height: 20 }, // Plataforma de inicio
+                    { x: 150, y: GAME_HEIGHT - 90, width: 60, height: 20 },
+                    { x: 250, y: GAME_HEIGHT - 130, width: 50, height: 20 },
+                    { x: 350, y: GAME_HEIGHT - 170, width: 40, height: 20 },
+                    { x: 450, y: GAME_HEIGHT - 210, width: 50, height: 20 },
+                    { x: 550, y: GAME_HEIGHT - 250, width: 60, height: 20 }
+                ],
+                objective: { x: 650, y: GAME_HEIGHT - 300, width: 30, height: 30 }
+            },
+            4: { // Nivel 3: Plataformas más dispersas
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 100, height: 20 }, // Plataforma de inicio
+                    { x: 180, y: GAME_HEIGHT - 120, width: 80, height: 20 },
+                    { x: 300, y: GAME_HEIGHT - 200, width: 70, height: 20 },
+                    { x: 425, y: GAME_HEIGHT - 280, width: 90, height: 20 },
+                    { x: 580, y: GAME_HEIGHT - 325, width: 50, height: 20 }
+                ],
+                objective: { x: 620, y: GAME_HEIGHT - 380, width: 30, height: 30 }
+            },
+            5: { // Nivel 4: Desafío de precisión
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 60, height: 20 }, // Plataforma de inicio
+                    { x: 150, y: GAME_HEIGHT - 100, width: 50, height: 20 },
+                    { x: 250, y: GAME_HEIGHT - 150, width: 40, height: 20 },
+                    { x: 350, y: GAME_HEIGHT - 200, width: 30, height: 20 },
+                    { x: 450, y: GAME_HEIGHT - 250, width: 20, height: 20 },
+                    { x: 550, y: GAME_HEIGHT - 300, width: 10, height: 20 } // Plataforma muy pequeña
+                ],
+                objective: { x: 600, y: GAME_HEIGHT - 350, width: 30, height: 30 }
+            },
+            6: { // Nivel 5: El último desafío
+                platforms: [
+                    { x: 50, y: GAME_HEIGHT - 50, width: 80, height: 20 }, // Plataforma de inicio
+                    { x: 180, y: GAME_HEIGHT - 120, width: 70, height: 20 },
+                    { x: 300, y: GAME_HEIGHT - 200, width: 60, height: 20 },
+                    { x: 450, y: GAME_HEIGHT - 280, width: 50, height: 20 },
+                    { x: 600, y: GAME_HEIGHT - 360, width: 40, height: 20 }
+                ],
+                objective: { x: 650, y: GAME_HEIGHT - 380, width: 30, height: 30 } // Plataforma final
+            }
+        };
+
+        // --- Inicialización del Juego ---
+        function initGame() {
+            console.log("Inicializando juego...");
+            currentLevel = 1;
+            lives = 3;
+            score = 0;
+            updateUI();
+            loadLevel(currentLevel);
+            player = createPlayer();
+            // Ajuste: asegurar que el jugador esté sobre la plataforma y grounded
+            player.x = platforms[0].x + platforms[0].width / 2 - player.width / 2;
+            player.y = platforms[0].y - player.height;
+            player.grounded = true;
+            player.dy = 0;
+            gameActive = true;
+            gameModal.classList.remove('active'); // Ocultar modal si estaba visible
+            requestAnimationFrame(gameLoop); // Iniciar el bucle del juego
+        }
+
+        // --- Cargar Nivel ---
+        function loadLevel(levelNum) {
+            console.log(`Cargando nivel: ${levelNum}`);
+            // Asegurarse de que el nivel existe
+            if (!levelData[levelNum]) {
+                console.error(`Error: El nivel ${levelNum} no está definido.`);
+                gameWin(); // O manejar como un error o fin de juego
+                return;
+            }
+            platforms = levelData[levelNum].platforms;
+            levelObjective = levelData[levelNum].objective;
+            player = createPlayer(); // Reiniciar posición del jugador
+            // Ajuste: asegurar que el jugador esté sobre la plataforma y grounded
+            player.x = platforms[0].x + platforms[0].width / 2 - player.width / 2;
+            player.y = platforms[0].y - player.height;
+            player.grounded = true;
+            player.dy = 0;
+        }
+
+        // --- Actualizar UI ---
+        function updateUI() {
+            levelDisplay.textContent = currentLevel;
+            livesDisplay.textContent = lives;
+            scoreDisplay.textContent = score;
+        }
+
+        // --- Bucle Principal del Juego ---
+        function gameLoop() {
+            if (!gameActive) return; // Detener el bucle si el juego no está activo
+
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- Actualizar Estado del Juego ---
+        function update() {
+            // Aplicar gravedad
+            player.dy += GRAVITY;
+            player.y += player.dy;
+            player.x += player.dx;
+
+            // Limitar movimiento horizontal dentro del canvas
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > GAME_WIDTH) player.x = GAME_WIDTH - player.width;
+
+            // Reset grounded state at the beginning of each update
+            player.grounded = false;
+
+            // Colisiones con plataformas
+            platforms.forEach(platform => {
+                // If the player is overlapping with the platform
+                if (
+                    player.x < platform.x + platform.width &&
+                    player.x + player.width > platform.x &&
+                    player.y < platform.y + platform.height &&
+                    player.y + player.height > platform.y
+                ) {
+                    // Collision from above (landing)
+                    if (player.dy > 0 && player.y + player.height - player.dy <= platform.y) {
+                        player.y = platform.y - player.height;
+                        player.dy = 0;
+                        player.isJumping = false;
+                        player.isFalling = false;
+                        player.grounded = true; // Player is grounded on this platform
+                    }
+                    // Collision from below (hitting head)
+                    else if (player.dy < 0 && player.y - player.dy >= platform.y + platform.height) {
+                        player.y = platform.y + platform.height;
+                        player.dy = 0;
+                    }
+                    // Side collision (only if not vertical collision)
+                    else if (player.dy === 0) {
+                        // If coming from left
+                        if (player.dx > 0 && player.x + player.width - player.dx <= platform.x) {
+                            player.x = platform.x - player.width;
+                            player.dx = 0;
+                        }
+                        // If coming from right
+                        else if (player.dx < 0 && player.x - player.dx >= platform.x + platform.width) {
+                            player.x = platform.x + platform.width;
+                            player.dx = 0;
+                        }
+                    }
+                }
+            });
+
+            // Condición de muerte: Si el jugador no está en el suelo (ninguna plataforma)
+            // Y cae por debajo del límite inferior del canvas, pierde una vida.
+            if (!player.grounded && player.y > GAME_HEIGHT) {
+                console.log("Jugador cayó al vacío. Perdiendo vida...");
+                loseLife();
+                return; // Detener actualizaciones para este frame después de perder una vida
+            }
+
+            // Control de movimiento horizontal
+            player.dx = 0; // Reiniciar dx para evitar movimiento continuo sin tecla
+            if (keys['ArrowLeft'] || keys['left']) {
+                player.dx = -PLAYER_SPEED;
+            }
+            if (keys['ArrowRight'] || keys['right']) {
+                player.dx = PLAYER_SPEED;
+            }
+
+            // Comprobar si el jugador ha alcanzado el objetivo del nivel
+            if (
+                player.x < levelObjective.x + levelObjective.width &&
+                player.x + player.width > levelObjective.x &&
+                player.y < levelObjective.y + levelObjective.height &&
+                player.y + player.height > levelObjective.y &&
+                currentLevel <= 6 // Asegurarse de que no se active después del nivel 6
+            ) {
+                console.log(`¡Objetivo alcanzado en Nivel ${currentLevel}!`);
+                gameActive = false; // Pausar el juego
+                displayQuestion();
+            }
+        }
+
+        // --- Dibujar Elementos del Juego ---
+        function draw() {
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT); // Limpiar canvas
+
+            // Dibujar fondo (cielo)
+            ctx.fillStyle = '#87ceeb';
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            // Dibujar plataformas
+            ctx.fillStyle = '#6b46c1'; // Color morado para plataformas
+            platforms.forEach(platform => {
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            });
+
+            // Dibujar objetivo del nivel (un "chip de IA" simple con efecto de pulsación)
+            let pulse = Math.sin(Date.now() * 0.005) * 5 + 10; // Efecto de pulsación
+            ctx.fillStyle = `hsl(50, 100%, ${70 + Math.sin(Date.now() * 0.005) * 10}%)`; // Color amarillento, luminosidad pulsante
+            ctx.beginPath();
+            ctx.arc(levelObjective.x + levelObjective.width / 2, levelObjective.y + levelObjective.height / 2, levelObjective.width / 2 + pulse / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FFD700'; // Color dorado base
+            ctx.beginPath();
+            ctx.arc(levelObjective.x + levelObjective.width / 2, levelObjective.y + levelObjective.height / 2, levelObjective.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#333'; // Detalles oscuros para el chip
+            ctx.fillRect(levelObjective.x + levelObjective.width / 4, levelObjective.y + levelObjective.height / 4, levelObjective.width / 2, levelObjective.height / 2);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(levelObjective.x, levelObjective.y, levelObjective.width, levelObjective.height);
+
+
+            // Dibujar jugador (un cuadrado simple)
+            ctx.fillStyle = '#f6ad55'; // Color naranja para el jugador
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+        }
+
+        // --- Manejo de Entrada (Teclado) ---
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === 'ArrowUp' && player.grounded) {
+                player.dy = JUMP_STRENGTH;
+                player.isJumping = true;
+                player.grounded = false; // Ya no está en el suelo
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // --- Manejo de Entrada (Botones Táctiles) ---
+        leftButton.addEventListener('touchstart', () => { keys['left'] = true; });
+        leftButton.addEventListener('touchend', () => { keys['left'] = false; });
+        rightButton.addEventListener('touchstart', () => { keys['right'] = true; });
+        rightButton.addEventListener('touchend', () => { keys['right'] = false; });
+        jumpButton.addEventListener('touchstart', () => {
+            if (player.grounded) {
+                player.dy = JUMP_STRENGTH;
+                player.isJumping = true;
+                player.grounded = false;
+            }
+        });
+        // Para evitar que el personaje siga saltando si se mantiene presionado el botón
+        jumpButton.addEventListener('touchend', () => { player.isJumping = false; });
+
+
+        // --- Funciones de Juego ---
+
+        // Mostrar la pregunta de IA
+        function displayQuestion() { // Ya no es async
+            const currentQuestion = getAIQuestionForLevel(currentLevel); // Obtiene la pregunta estática
+            if (!currentQuestion) {
+                gameWin(); // Si no hay más preguntas, el juego termina (ganado)
+                return;
+            }
+
+            modalTitle.textContent = `Pregunta de IA - Nivel ${currentLevel}`;
+            modalMessage.textContent = currentQuestion.question;
+            questionOptions.innerHTML = ''; // Limpiar opciones anteriores
+            questionOptions.style.display = 'block';
+            startButton.style.display = 'none'; // Ocultar botón de inicio
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.onclick = () => checkAnswer(option, currentQuestion.correctAnswer);
+                questionOptions.appendChild(button);
+            });
+
+            gameModal.classList.add('active'); // Mostrar el modal
+        }
+
+        // Verificar la respuesta del usuario
+        function checkAnswer(selectedOption, correctAnswer) {
+            gameModal.classList.remove('active'); // Ocultar el modal
+
+            if (selectedOption === correctAnswer) {
+                console.log(`Respuesta correcta en Nivel ${currentLevel}`);
+                score += 100; // Sumar puntos por respuesta correcta
+                updateUI();
+                if (currentLevel < 6) {
+                    currentLevel++;
+                    console.log(`Avanzando a Nivel ${currentLevel}`);
+                    loadLevel(currentLevel);
+                    gameActive = true; // Reanudar el juego
+                    requestAnimationFrame(gameLoop); // Asegurar que el bucle se reanude
+                } else {
+                    console.log("Completado el último nivel. Llamando a gameWin().");
+                    gameWin(); // Ha completado el último nivel
+                }
+            } else {
+                console.log(`Respuesta incorrecta en Nivel ${currentLevel}. Vidas restantes: ${lives - 1}`);
+                loseLife();
+            }
+        }
+
+        // Perder una vida
+        function loseLife() {
+            lives--;
+            updateUI();
+            if (lives <= 0) {
+                console.log("Vidas agotadas. Llamando a gameOver().");
+                gameOver();
+            } else {
+                console.log(`Perdiste una vida. Reiniciando Nivel ${currentLevel}.`);
+                // Reiniciar el nivel actual si pierde una vida
+                loadLevel(currentLevel);
+                gameActive = true; // Reanudar el juego
+                // Mostrar un mensaje breve de que perdió una vida (opcional)
+                modalTitle.textContent = "¡Respuesta Incorrecta!";
+                modalMessage.textContent = `Has perdido una vida. Te quedan ${lives}.`;
+                questionOptions.style.display = 'none';
+                startButton.style.display = 'block';
+                startButton.focus(); // <-- Asegura el foco en el botón
+                startButton.textContent = "Continuar";
+                startButton.onclick = () => {
+                    gameModal.classList.remove('active');
+                    gameActive = true;
+                    requestAnimationFrame(gameLoop); // Asegurar que el bucle se reanude
+                };
+                // El listener global para Enter ya está activo desde window.onload
+                gameModal.classList.add('active');
+            }
+        }
+
+        // Fin del juego (derrota)
+        function gameOver() {
+            gameActive = false;
+            modalTitle.textContent = "¡GAME OVER!";
+            modalMessage.textContent = "Has perdido todas tus vidas. ¡No te rindas! ¡Sigue aprendiendo sobre IA!";
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
+            startButton.textContent = "Volver a Jugar";
+            startButton.onclick = initGame; // Reiniciar el juego
+            gameModal.classList.add('active');
+        }
+
+        // Fin del juego (victoria)
+        function gameWin() {
+            gameActive = false;
+            modalTitle.textContent = "¡FELICIDADES! ¡GANASTE!";
+            modalMessage.textContent = "¡Ahora eres un MAESTRO DE LA IA!";
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
+            startButton.textContent = "Volver a Jugar";
+            startButton.onclick = initGame; // Ofrecer reiniciar
+            gameModal.classList.add('active');
+        }
+
+        // --- Listener global para Enter sobre startButton (si no existe) ---
+        if (!window._startButtonEnterListener) {
+            window._startButtonEnterListener = function(e) {
+                if ((e.key === 'Enter' || e.keyCode === 13) && startButton.style.display !== 'none' && gameModal.classList.contains('active')) {
+                    startButton.click();
+                }
+            };
+            document.addEventListener('keydown', window._startButtonEnterListener);
+        }
+
+        // --- Iniciar el juego al cargar la página ---
+        window.onload = () => {
+            // Mostrar modal de bienvenida
+            modalTitle.textContent = "¡Bienvenido a AI Jump!";
+            modalMessage.textContent = "Salta a través de los niveles y alcanza el chip de IA para responder preguntas y convertirte en un Maestro. ¡Tienes 3 vidas!";
+            questionOptions.style.display = 'none';
+            startButton.style.display = 'block';
+            startButton.focus(); // <-- Asegura el foco en el botón
+            startButton.textContent = "Comenzar Juego";
+            startButton.onclick = initGame;
+            gameModal.classList.add('active');
+        };
+
+    </script>
+</body>
+</html>
